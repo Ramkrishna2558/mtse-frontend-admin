@@ -1,28 +1,32 @@
-import { Routes, Route } from 'react-router-dom';
-
-function DashboardPage() {
-  return (
-    <div>
-      <h1>Admin Dashboard</h1>
-      <p>Welcome to the MTSE Admin Panel</p>
-    </div>
-  );
-}
-
-function NotFoundPage() {
-  return (
-    <div>
-      <h1>404</h1>
-      <p>Page not found</p>
-    </div>
-  );
-}
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { StoreManager } from '../features/store-manager/StoreManager';
+import { AdminLogin } from '../features/auth/AdminLogin';
+import { AdminLayout } from '../components/layout/AdminLayout';
+import { ProductManager } from '../features/product-manager/ProductManager';
+import { OrderManager } from '../features/order-manager/OrderManager';
 
 export function AppRouter() {
   return (
     <Routes>
-      <Route path="/" element={<DashboardPage />} />
-      <Route path="*" element={<NotFoundPage />} />
+      <Route path="/login" element={<AdminLogin />} />
+      
+      {/* Protected Routes wrapped in AdminLayout */}
+      <Route element={<AdminLayout />}>
+        {/* Default route inside the dashboard */}
+        <Route path="/" element={<Navigate to="/stores" replace />} />
+        
+        {/* Only platform admin should technically see /stores, but StoreManager handles empty view for merchants */}
+        <Route path="/stores" element={<StoreManager />} />
+        <Route path="/settings" element={<StoreManager />} /> 
+        
+        {/* Products module */}
+        <Route path="/products" element={<ProductManager />} />
+
+        {/* Orders module */}
+        <Route path="/orders" element={<OrderManager />} />
+      </Route>
+
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

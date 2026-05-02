@@ -1,17 +1,20 @@
+import React from 'react';
 import { BrowserRouter } from 'react-router-dom';
+import { AdminAuthProvider } from '../context/AdminAuthContext';
+import { SnackbarProvider } from '../components/common/Snackbar';
 
 interface AppProvidersProps {
   children: React.ReactNode;
 }
 
-/**
- * All top-level providers go here.
- * Add Zustand stores, theme providers, auth context, etc.
- */
 export function AppProviders({ children }: AppProvidersProps) {
   return (
-    <BrowserRouter>
-      {children}
-    </BrowserRouter>
+    <SnackbarProvider>
+      <AdminAuthProvider>
+        <BrowserRouter>
+          {children}
+        </BrowserRouter>
+      </AdminAuthProvider>
+    </SnackbarProvider>
   );
 }
