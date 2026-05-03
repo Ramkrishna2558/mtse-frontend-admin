@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { axiosClient as axios } from '../../lib/api';
 import { useAdminAuth } from '../../context/AdminAuthContext';
 import { DynamicTable } from '../../components/common/DynamicTable';
 import { createTableConfig } from '../../../../mtse-shared/src/tables';
 
-const API_URL = 'http://localhost:3000/orders';
+const API_URL = '/orders';
 
 export const OrderManager: React.FC = () => {
   const { user } = useAdminAuth();
@@ -14,9 +14,10 @@ export const OrderManager: React.FC = () => {
 
   useEffect(() => {
     // Fetch orders from JSON server
-    axios.get<any[]>(API_URL)
+    axios.get<any>(API_URL)
       .then(response => {
-        setOrders(response.data);
+        const data = response.data;
+        setOrders(Array.isArray(data) ? data : data.items || []);
       })
       .catch(error => {
         console.error('Error fetching orders:', error);
@@ -39,14 +40,14 @@ export const OrderManager: React.FC = () => {
     { key: 'createdAt', label: 'Date', render: (val) => new Date(String(val)).toLocaleDateString('en-IN') },
     { key: 'status', label: 'Status', render: (val) => {
       const colors: any = {
-        pending: { bg: '#fff7e6', text: '#d46b08', border: '#ffd591' },
-        packing: { bg: '#e6f7ff', text: '#1890ff', border: '#91d5ff' },
-        packed: { bg: '#f9f0ff', text: '#722ed1', border: '#d3adf7' },
-        shipped: { bg: '#e6fffb', text: '#13c2c2', border: '#87e8de' },
-        delivered: { bg: '#f6ffed', text: '#52c41a', border: '#b7eb8f' },
-        cancelled: { bg: '#fff1f0', text: '#f5222d', border: '#ffa39e' }
+        PENDING: { bg: '#fff7e6', text: '#d46b08', border: '#ffd591' },
+        CONFIRMED: { bg: '#e6f7ff', text: '#1890ff', border: '#91d5ff' },
+        PROCESSING: { bg: '#f9f0ff', text: '#722ed1', border: '#d3adf7' },
+        SHIPPED: { bg: '#e6fffb', text: '#13c2c2', border: '#87e8de' },
+        DELIVERED: { bg: '#f6ffed', text: '#52c41a', border: '#b7eb8f' },
+        CANCELLED: { bg: '#fff1f0', text: '#f5222d', border: '#ffa39e' }
       };
-      const style = colors[val] || { bg: '#eee', text: '#666', border: '#ccc' };
+      const style = colors[String(val).toUpperCase()] || { bg: '#eee', text: '#666', border: '#ccc' };
       return (
         <span style={{ 
           padding: '4px 10px', 
@@ -74,14 +75,13 @@ export const OrderManager: React.FC = () => {
 
   const handleUpdateStatus = async (id: string, status: string) => {
     try {
-      const order = orders.find(o => o.id === id);
-      if (!order) return;
-      const updatedOrder = { ...order, status };
-      await axios.put(`${API_URL}/${id}`, updatedOrder);
+      const response = await axios.put(`${API_URL}/${id}/status`, { status });
+      const updatedOrder = response.data;
       setOrders(prev => prev.map(o => o.id === id ? updatedOrder : o));
       if (selectedOrder && selectedOrder.id === id) {
         setSelectedOrder(updatedOrder);
       }
+      alert(`Order status updated to ${status}`);
     } catch (error) {
       console.error('Failed to update order status', error);
       alert('Failed to update order status');
@@ -107,28 +107,28 @@ export const OrderManager: React.FC = () => {
             
             <div style={{ marginBottom: '1.5rem' }}>
               <p><strong>Order ID:</strong> {selectedOrder.id}</p>
-              <p><strong>Customer:</strong> {selectedOrder.customerEmail}</p>
+              <p><strong>Customer:</strong> {selectedOrder.customerEmail || selectedOrder.customer?.email}</p>
               <p><strong>Date:</strong> {new Date(selectedOrder.createdAt).toLocaleString()}</p>
               <p>
                 <strong>Status:</strong> <span style={{fontWeight: 700, color: '#ff6b35'}}>{selectedOrder.status.toUpperCase()}</span>
                 <div style={{ marginTop: '1rem', display: 'flex', gap: '0.5rem' }}>
-                  {selectedOrder.status === 'pending' && (
-                    <button onClick={() => handleUpdateStatus(selectedOrder.id, 'packing')} style={{ padding: '6px 12px', background: '#1890ff', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>
-                      Start Packing
+                  {selectedOrder.status === 'PENDING' && (
+                    <button onClick={() => handleUpdateStatus(selectedOrder.id, 'CONFIRMED')} style={{ padding: '6px 12px', background: '#1890ff', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>
+                      Confirm Order
                     </button>
                   )}
-                  {selectedOrder.status === 'packing' && (
-                    <button onClick={() => handleUpdateStatus(selectedOrder.id, 'packed')} style={{ padding: '6px 12px', background: '#722ed1', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>
-                      Packing Done
+                  {selectedOrder.status === 'CONFIRMED' && (
+                    <button onClick={() => handleUpdateStatus(selectedOrder.id, 'PROCESSING')} style={{ padding: '6px 12px', background: '#722ed1', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>
+                      Start Processing
                     </button>
                   )}
-                  {selectedOrder.status === 'packed' && (
-                    <button onClick={() => handleUpdateStatus(selectedOrder.id, 'shipped')} style={{ padding: '6px 12px', background: '#13c2c2', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>
-                      Dispatch Order
+                  {selectedOrder.status === 'PROCESSING' && (
+                    <button onClick={() => handleUpdateStatus(selectedOrder.id, 'SHIPPED')} style={{ padding: '6px 12px', background: '#13c2c2', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>
+                      Ship Order
                     </button>
                   )}
-                  {selectedOrder.status === 'shipped' && (
-                    <button onClick={() => handleUpdateStatus(selectedOrder.id, 'delivered')} style={{ padding: '6px 12px', background: '#52c41a', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>
+                  {selectedOrder.status === 'SHIPPED' && (
+                    <button onClick={() => handleUpdateStatus(selectedOrder.id, 'DELIVERED')} style={{ padding: '6px 12px', background: '#52c41a', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}>
                       Mark Delivered
                     </button>
                   )}

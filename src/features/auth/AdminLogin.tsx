@@ -7,7 +7,7 @@ export const AdminLogin: React.FC = () => {
   const { login } = useAdminAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'platform_admin' | 'merchant'>('merchant');
+  const [password, setPassword] = useState('');
 
   const { showSnackbar } = useSnackbar();
   const [isLoading, setIsLoading] = useState(false);
@@ -16,7 +16,7 @@ export const AdminLogin: React.FC = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await login(email, role);
+      await login(email, password);
       showSnackbar('Login successful. Redirecting to dashboard...', 'success');
       navigate('/'); // redirect to dashboard
     } catch (error: any) {
@@ -44,19 +44,20 @@ export const AdminLogin: React.FC = () => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@platform.com or merchant..."
               style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '6px' }}
+              required
             />
           </div>
-          
+
           <div>
-            <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', fontWeight: 600, color: '#444' }}>Role (Demo bypass)</label>
-            <select 
-              value={role} 
-              onChange={(e) => setRole(e.target.value as any)}
-              style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '6px', background: 'white' }}
-            >
-              <option value="merchant">Store Merchant</option>
-              <option value="platform_admin">Platform Admin</option>
-            </select>
+            <label style={{ display: 'block', marginBottom: '8px', fontSize: '0.85rem', fontWeight: 600, color: '#444' }}>Password</label>
+            <input 
+              type="password" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              style={{ width: '100%', padding: '12px', border: '1px solid #ddd', borderRadius: '6px' }}
+              required
+            />
           </div>
 
           <button 
@@ -70,9 +71,9 @@ export const AdminLogin: React.FC = () => {
         <div style={{ marginTop: '2rem', padding: '1rem', background: '#f8f9fa', borderRadius: '6px', fontSize: '0.8rem', color: '#666' }}>
           <strong>Demo Login Hints:</strong>
           <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
-            <li><code>admin@platform.com</code> - Sees ALL stores</li>
-            <li><code>fashion@merchant.com</code> - Sees ONLY fashion store</li>
-            <li><code>tech@merchant.com</code> - Sees ONLY tech store</li>
+            <li><code>admin@platform.com</code> / <code>1234</code> - Sees ALL</li>
+            <li><code>fashion@merchant.com</code> / <code>1234</code> - Sees ONLY fashion</li>
+            <li><code>tech@merchant.com</code> / <code>1234</code> - Sees ONLY tech</li>
           </ul>
         </div>
       </div>

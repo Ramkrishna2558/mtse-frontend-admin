@@ -4,6 +4,7 @@ import { AdminLogin } from '../features/auth/AdminLogin';
 import { AdminLayout } from '../components/layout/AdminLayout';
 import { ProductManager } from '../features/product-manager/ProductManager';
 import { OrderManager } from '../features/order-manager/OrderManager';
+import { Dashboard } from '../features/dashboard/Dashboard';
 
 export function AppRouter() {
   return (
@@ -13,7 +14,9 @@ export function AppRouter() {
       {/* Protected Routes wrapped in AdminLayout */}
       <Route element={<AdminLayout />}>
         {/* Default route inside the dashboard */}
-        <Route path="/" element={<Navigate to="/stores" replace />} />
+        <Route path="/" element={<Dashboard />} />
+        
+        <Route path="/dashboard" element={<Dashboard />} />
         
         {/* Only platform admin should technically see /stores, but StoreManager handles empty view for merchants */}
         <Route path="/stores" element={<StoreManager />} />

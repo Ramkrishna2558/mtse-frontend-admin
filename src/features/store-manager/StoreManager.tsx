@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { axiosClient as axios } from '../../lib/api';
 import { DynamicTable } from '../../components/common/DynamicTable';
 import { DynamicForm } from '../../components/common/DynamicForm';
 import { storeTableConfig, storeFormConfig, type StoreFormValues } from './store.config';

@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import { axiosClient as axios } from '../lib/api';
 import { tokenStorage, type AuthUser } from '../../../mtse-shared/src/auth';
 
 interface AdminAuthContextType {
   user: AuthUser | null;
-  login: (email: string, role: 'platform_admin' | 'merchant') => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -24,20 +24,25 @@ export const AdminAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, roleFallback: 'platform_admin' | 'merchant') => {
+  const login = async (email: string, password: string) => {
     try {
-      const response = await axios.post('http://localhost:3000/auth/login', {
+      const response = await axios.post('/auth/login', {
         email,
-        role: roleFallback === 'platform_admin' ? 'admin' : 'merchant'
+        password,
       });
       
       const { access_token, user: apiUser } = response.data;
       
-      // Enrich user with role for the admin dashboard
+      // Use the role provided by the backend to determine dashboard role
+      let assignedRole = 'merchant';
+      if (apiUser.role === 'SUPER_ADMIN') {
+        assignedRole = 'platform_admin';
+      }
+      
       const authUser: AuthUser = { 
         ...apiUser, 
-        roles: [roleFallback],
-        tenantId: email.includes('merchant') ? `${email.split('@')[0]}_store` : undefined
+        roles: [assignedRole],
+        tenantId: apiUser.tenantId
       };
 
       setUser(authUser);

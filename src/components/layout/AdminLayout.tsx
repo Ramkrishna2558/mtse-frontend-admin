@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, Navigate, Link } from 'react-router-dom';
 import { useAdminAuth } from '../../context/AdminAuthContext';
 import { hasRole } from '../../../../mtse-shared/src/auth';
+import { axiosClient as axios } from '../../lib/api';
 
 export const AdminLayout: React.FC = () => {
   const { user, isAuthenticated, logout } = useAdminAuth();
@@ -29,6 +30,11 @@ export const AdminLayout: React.FC = () => {
 
         <nav style={{ flex: 1, padding: '1.5rem 0' }}>
           <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+            <li>
+              <Link to="/" style={{ display: 'block', padding: '12px 1.5rem', color: 'white', textDecoration: 'none', opacity: 0.8 }}>
+                📊 Dashboard
+              </Link>
+            </li>
             {isPlatformAdmin && (
               <li>
                 <Link to="/stores" style={{ display: 'block', padding: '12px 1.5rem', color: 'white', textDecoration: 'none', opacity: 0.8 }}>
@@ -66,6 +72,23 @@ export const AdminLayout: React.FC = () => {
           >
             Sign Out
           </button>
+
+          {isPlatformAdmin && (
+            <button 
+              onClick={async () => {
+                try {
+                  await axios.post('/analytics/seed-demo');
+                  alert('Demo data successfully re-seeded!');
+                  window.location.reload();
+                } catch (err) {
+                  alert('Failed to seed demo data. Please check backend.');
+                }
+              }}
+              style={{ width: '100%', padding: '10px', background: '#ff6b35', border: 'none', borderRadius: '4px', color: 'white', cursor: 'pointer', marginTop: '1rem', fontWeight: 600 }}
+            >
+              🌱 Reset Demo Data
+            </button>
+          )}
         </div>
       </aside>
 

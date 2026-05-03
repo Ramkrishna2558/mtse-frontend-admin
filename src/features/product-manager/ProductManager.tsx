@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import axios from 'axios';
+import { axiosClient as axios } from '../../lib/api';
 import { useAdminAuth } from '../../context/AdminAuthContext';
 import { DynamicTable } from '../../components/common/DynamicTable';
 import { DynamicForm } from '../../components/common/DynamicForm';
@@ -7,7 +7,7 @@ import { createTableConfig } from '../../../../mtse-shared/src/tables';
 import { createFormConfig, type FieldConfig } from '../../../../mtse-shared/src/forms';
 import type { ProductDto } from '../../../../mtse-shared/src/types';
 
-const API_URL = 'http://localhost:3000/products';
+const API_URL = '/products';
 
 export const ProductManager: React.FC = () => {
   const { user } = useAdminAuth();
@@ -18,9 +18,18 @@ export const ProductManager: React.FC = () => {
 
   useEffect(() => {
     // Fetch products from JSON server
-    axios.get<ProductDto[]>(API_URL)
+    axios.get<any>(API_URL)
       .then(response => {
-        setProducts(response.data);
+        const data = response.data;
+        setProducts((Array.isArray(data) ? data : data.items || []).map(p => {
+          const firstVariantPrice = p.variants?.[0]?.price;
+          const price = p.price !== undefined ? p.price : (firstVariantPrice !== undefined ? Number(firstVariantPrice) : 0);
+          return {
+            ...p,
+            price: Number(price),
+            category: typeof p.category === 'object' && p.category !== null ? p.category.name : p.category
+          };
+        }));
       })
       .catch(error => {
         console.error('Error fetching products:', error);
@@ -92,40 +101,35 @@ export const ProductManager: React.FC = () => {
     });
 
     if (editingProduct) {
-      const updatedProduct: ProductDto = {
-        ...editingProduct,
+      const updatedProduct = {
         name: String(values.name),
         price: Number(values.price),
         stock: Number(values.stock),
         attributes,
-        updatedAt: new Date().toISOString()
       };
       try {
-        await axios.put(`${API_URL}/${editingProduct.id}`, updatedProduct);
-        setProducts(prev => prev.map(p => p.id === editingProduct.id ? updatedProduct : p));
+        const response = await axios.put(`${API_URL}/${editingProduct.id}`, updatedProduct);
+        setProducts(prev => prev.map(p => p.id === editingProduct.id ? response.data : p));
         setEditingProduct(null);
+        alert('Product updated successfully!');
       } catch (error) {
         console.error('Failed to update product', error);
         alert('Failed to update product');
       }
     } else {
-      const newProduct: ProductDto = {
-        id: `prod_${Date.now()}`,
+      const newProduct = {
         name: String(values.name),
         price: Number(values.price),
-        currency: 'INR',
         stock: Number(values.stock),
-        status: 'active',
         tenantId: user.tenantId,
         attributes,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
       };
 
       try {
-        await axios.post(API_URL, newProduct);
-        setProducts([...products, newProduct]);
+        const response = await axios.post(API_URL, newProduct);
+        setProducts([...products, response.data]);
         setIsAdding(false);
+        alert('Product added successfully!');
       } catch (error) {
         console.error('Failed to add product', error);
         alert('Failed to save product to database');
