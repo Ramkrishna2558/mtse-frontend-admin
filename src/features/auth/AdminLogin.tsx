@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAdminAuth } from '../../context/AdminAuthContext';
 import { useSnackbar } from '../../components/common/Snackbar';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 export const AdminLogin: React.FC = () => {
   const { login } = useAdminAuth();
@@ -67,6 +67,10 @@ export const AdminLogin: React.FC = () => {
             Sign In
           </button>
         </form>
+
+        <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.9rem', color: '#666' }}>
+          Don't have a store? <Link to="/register" style={{ color: '#111', fontWeight: 700, textDecoration: 'none' }}>Register Now</Link>
+        </div>
 
         <div style={{ marginTop: '2rem', padding: '1rem', background: '#f8f9fa', borderRadius: '6px', fontSize: '0.8rem', color: '#666' }}>
           <strong>Demo Login Hints:</strong>

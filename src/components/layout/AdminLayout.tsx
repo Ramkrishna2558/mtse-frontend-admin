@@ -12,6 +12,12 @@ export const AdminLayout: React.FC = () => {
   }
 
   const isPlatformAdmin = hasRole(user, 'platform_admin');
+  const isMerchant = hasRole(user, 'merchant');
+
+  // If merchant has no store, redirect to setup
+  if (isMerchant && !user?.tenantId && window.location.pathname !== '/setup-store') {
+    return <Navigate to="/setup-store" replace />;
+  }
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Inter, sans-serif', background: '#f9fafb' }}>

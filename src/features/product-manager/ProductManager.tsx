@@ -1,23 +1,25 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { axiosClient as axios } from '../../lib/api';
 import { useAdminAuth } from '../../context/AdminAuthContext';
+import { useSnackbar } from '../../components/common/Snackbar';
 import { DynamicTable } from '../../components/common/DynamicTable';
-import { DynamicForm } from '../../components/common/DynamicForm';
 import { createTableConfig } from '../../../../mtse-shared/src/tables';
-import { createFormConfig, type FieldConfig } from '../../../../mtse-shared/src/forms';
 import type { ProductDto } from '../../../../mtse-shared/src/types';
+import { ProductForm } from './ProductForm';
 
 const API_URL = '/products';
 
 export const ProductManager: React.FC = () => {
   const { user } = useAdminAuth();
+  const { showSnackbar } = useSnackbar();
   const [products, setProducts] = useState<ProductDto[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductDto | null>(null);
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Fetch products from JSON server
+    // Fetch products
     axios.get<any>(API_URL)
       .then(response => {
         const data = response.data;
@@ -35,6 +37,19 @@ export const ProductManager: React.FC = () => {
         console.error('Error fetching products:', error);
       });
   }, []);
+
+  useEffect(() => {
+    // Fetch categories if tenantId is available
+    if (user?.tenantId) {
+      axios.get<any>(`/categories?tenantId=${user.tenantId}`)
+        .then(response => {
+          setCategories(response.data);
+        })
+        .catch(error => {
+          console.error('Error fetching categories:', error);
+        });
+    }
+  }, [user?.tenantId]);
 
   // TENANT ISOLATION: Filter products so merchants only see their own.
   const myProducts = user?.roles.includes('platform_admin') 
@@ -61,22 +76,7 @@ export const ProductManager: React.FC = () => {
     }
   ], 'id', { searchable: true, searchFields: ['name'], pageSize: 10, emptyMessage: 'Your inventory is empty.' });
 
-  // 2. Form Config
-  const dynamicAttributeFields: FieldConfig[] = user?.tenantId === 'fashion_store' ? [
-    { name: 'attr_category', type: 'select', label: 'Category', options: [{label:'Dresses', value:'Dresses'}, {label:'Outerwear', value:'Outerwear'}], required: true },
-    { name: 'attr_color', type: 'text', label: 'Color Variant', required: true },
-    { name: 'attr_material', type: 'text', label: 'Material' }
-  ] : user?.tenantId === 'tech_store' ? [
-    { name: 'attr_type', type: 'select', label: 'Device Type', options: [{label:'Smartphone', value:'Smartphone'}, {label:'Laptop', value:'Laptop'}], required: true },
-    { name: 'attr_storage', type: 'text', label: 'Storage Capacity' }
-  ] : []; // If admin, complex logic needed to select tenant first, skipping for demo simplicity
-
-  const productFormConfig = createFormConfig([
-    { name: 'name', type: 'text', label: 'Product Name', required: true, colSpan: 2 },
-    { name: 'price', type: 'number', label: 'Unit Price (₹)', required: true },
-    { name: 'stock', type: 'number', label: 'Initial Stock Count', required: true },
-    ...dynamicAttributeFields
-  ], { columns: 2, submitLabel: 'List Product', resetLabel: 'Cancel' });
+  // Custom form is now used, so we don't need dynamicAttributeFields or productFormConfig here.
 
   const handleDeleteProduct = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this product?")) return;
@@ -85,54 +85,48 @@ export const ProductManager: React.FC = () => {
       setProducts(prev => prev.filter(p => p.id !== id));
     } catch (error) {
       console.error("Failed to delete product", error);
-      alert("Failed to delete product.");
+      showSnackbar("Failed to delete product.", "error");
     }
   };
 
-  const handleSaveProduct = async (values: Record<string, unknown>) => {
-    if (!user?.tenantId) return alert('Platform Admins must assign a tenant before adding products.');
+  const handleSaveProduct = async (productData: any) => {
+    if (!user?.tenantId) {
+      showSnackbar('Platform Admins must assign a tenant before adding products.', 'warning');
+      return;
+    }
     
-    // Extract dynamic attrs
-    const attributes: Record<string, any> = {};
-    Object.keys(values).forEach(key => {
-      if (key.startsWith('attr_')) {
-        attributes[key.replace('attr_', '')] = values[key];
-      }
-    });
+    const finalData = {
+      ...productData,
+      tenantId: user.tenantId,
+    };
 
     if (editingProduct) {
-      const updatedProduct = {
-        name: String(values.name),
-        price: Number(values.price),
-        stock: Number(values.stock),
-        attributes,
-      };
       try {
-        const response = await axios.put(`${API_URL}/${editingProduct.id}`, updatedProduct);
-        setProducts(prev => prev.map(p => p.id === editingProduct.id ? response.data : p));
+        const response = await axios.put(`${API_URL}/${editingProduct.id}`, finalData);
+        setProducts(prev => prev.map(p => p.id === editingProduct.id ? {
+          ...response.data,
+          price: Number(response.data.variants?.[0]?.price || 0),
+          category: typeof response.data.category === 'object' && response.data.category !== null ? response.data.category.name : response.data.category
+        } : p));
         setEditingProduct(null);
-        alert('Product updated successfully!');
+        showSnackbar('Product updated successfully!', 'success');
       } catch (error) {
         console.error('Failed to update product', error);
-        alert('Failed to update product');
+        showSnackbar('Failed to update product', 'error');
       }
     } else {
-      const newProduct = {
-        name: String(values.name),
-        price: Number(values.price),
-        stock: Number(values.stock),
-        tenantId: user.tenantId,
-        attributes,
-      };
-
       try {
-        const response = await axios.post(API_URL, newProduct);
-        setProducts([...products, response.data]);
+        const response = await axios.post(API_URL, finalData);
+        setProducts([...products, {
+          ...response.data,
+          price: Number(response.data.variants?.[0]?.price || 0),
+          category: typeof response.data.category === 'object' && response.data.category !== null ? response.data.category.name : response.data.category
+        }]);
         setIsAdding(false);
-        alert('Product added successfully!');
+        showSnackbar('Product added successfully!', 'success');
       } catch (error) {
         console.error('Failed to add product', error);
-        alert('Failed to save product to database');
+        showSnackbar('Failed to save product to database', 'error');
       }
     }
   };
@@ -142,12 +136,12 @@ export const ProductManager: React.FC = () => {
     if (!file) return;
 
     if (!user?.tenantId) {
-      alert('Platform Admins must assign a tenant before adding products.');
+      showSnackbar('Platform Admins must assign a tenant before adding products.', 'warning');
       return;
     }
 
     // Mock processing the excel/csv file
-    alert(`Processing file: ${file.name}...\nParsing rows and saving to database...`);
+    showSnackbar(`Processing file: ${file.name}... Parsing rows and saving to database...`, 'info');
     
     // Create a mock imported product
     const importedProduct: ProductDto = {
@@ -168,7 +162,7 @@ export const ProductManager: React.FC = () => {
       setProducts(prev => [...prev, importedProduct]);
     } catch (error) {
       console.error('Failed to upload product', error);
-      alert('Failed to save imported product to database');
+      showSnackbar('Failed to save imported product to database', 'error');
     }
     
     // Reset the input
@@ -212,17 +206,13 @@ export const ProductManager: React.FC = () => {
       <DynamicTable config={productTableConfig} data={myProducts} />
 
       {(isAdding || editingProduct) && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
-          <div style={{ background: 'white', padding: '3rem', borderRadius: '12px', width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <h2 style={{ marginTop: 0 }}>{editingProduct ? 'Edit Listing' : 'Create Listing'}</h2>
-            <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '2rem' }}>
-              ℹ️ Notice how attributes automatically adapt (e.g. Memory vs Fabric) based on your Store configuration.
-            </p>
-            <DynamicForm 
-              config={productFormConfig} 
-              initialValues={editingProduct ? { ...editingProduct, ...Object.fromEntries(Object.entries(editingProduct.attributes || {}).map(([k,v]) => ['attr_'+k, v])) } as any : undefined}
-              onSubmit={handleSaveProduct} 
-              onCancel={() => { setIsAdding(false); setEditingProduct(null); }} 
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '2rem' }}>
+          <div style={{ background: 'white', padding: '2rem', borderRadius: '24px', width: '100%', maxWidth: '900px', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
+            <ProductForm 
+              initialValues={editingProduct}
+              categories={categories}
+              onSubmit={handleSaveProduct}
+              onCancel={() => { setIsAdding(false); setEditingProduct(null); }}
             />
           </div>
         </div>

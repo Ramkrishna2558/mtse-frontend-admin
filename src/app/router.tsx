@@ -1,6 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { StoreManager } from '../features/store-manager/StoreManager';
 import { AdminLogin } from '../features/auth/AdminLogin';
+import { AdminRegister } from '../features/auth/AdminRegister';
+import { StoreSetupWizard } from '../features/store-manager/StoreSetupWizard';
 import { AdminLayout } from '../components/layout/AdminLayout';
 import { ProductManager } from '../features/product-manager/ProductManager';
 import { OrderManager } from '../features/order-manager/OrderManager';
@@ -10,6 +12,8 @@ export function AppRouter() {
   return (
     <Routes>
       <Route path="/login" element={<AdminLogin />} />
+      <Route path="/register" element={<AdminRegister />} />
+      <Route path="/setup-store" element={<StoreSetupWizard />} />
       
       {/* Protected Routes wrapped in AdminLayout */}
       <Route element={<AdminLayout />}>

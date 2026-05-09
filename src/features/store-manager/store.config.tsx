@@ -4,8 +4,12 @@ import type { FieldType } from '../../../../mtse-shared/src/forms';
 
 export interface StoreFormValues {
   tenantId: string;
-  brandName: string;
-  brandTagline: string;
+  name: string;
+  slug: string;
+  description: string;
+  logoUrl: string;
+  bannerUrl: string;
+  currency: string;
   showWishlist: boolean;
 }
 
@@ -16,25 +20,34 @@ export interface StoreFormValues {
 export const storeTableConfig = createTableConfig<StoreFormValues>(
   [
     {
-      key: 'tenantId',
-      label: 'Tenant ID',
-      width: '150px',
+      key: 'logoUrl',
+      label: 'Logo',
+      width: '60px',
+      render: (val) => val ? (
+        <img src={String(val)} alt="Logo" style={{ width: '32px', height: '32px', borderRadius: '4px', objectFit: 'cover' }} />
+      ) : (
+        <div style={{ width: '32px', height: '32px', background: '#eee', borderRadius: '4px' }} />
+      )
+    },
+    {
+      key: 'name',
+      label: 'Store Name',
+      sortable: true
+    },
+    {
+      key: 'slug',
+      label: 'Slug',
       render: (val) => (
         <code style={{ background: '#f5f5f5', padding: '2px 6px', borderRadius: '4px', fontSize: '0.85rem' }}>
           {String(val)}
         </code>
       )
-    },
-    {
-      key: 'brandName',
-      label: 'Brand Name',
-      sortable: true
     }
   ],
   'tenantId',
   {
     searchable: true,
-    searchFields: ['tenantId', 'brandName'],
+    searchFields: ['tenantId', 'name', 'slug'],
     pageSize: 5,
     emptyMessage: 'No stores have been provisioned yet.'
   }
@@ -46,16 +59,7 @@ export const storeTableConfig = createTableConfig<StoreFormValues>(
 
 export const storeFormConfig = createFormConfig([
   {
-    name: 'tenantId',
-    type: 'text',
-    label: 'Unique Tenant ID',
-    placeholder: 'e.g., fashion_store_1',
-    required: true,
-    helpText: 'A unique identifier for this database tenant.',
-    colSpan: 2
-  },
-  {
-    name: 'brandName',
+    name: 'name',
     type: 'text',
     label: 'Store Brand Name',
     placeholder: 'e.g., Luxe Fashion',
@@ -63,10 +67,40 @@ export const storeFormConfig = createFormConfig([
     colSpan: 1
   },
   {
-    name: 'brandTagline',
+    name: 'slug',
     type: 'text',
-    label: 'Brand Tagline',
-    placeholder: 'e.g., Elegance in every stitch',
+    label: 'Store URL Slug',
+    placeholder: 'e.g., luxe-fashion',
+    required: true,
+    colSpan: 1
+  },
+  {
+    name: 'description',
+    type: 'text',
+    label: 'Brand Description',
+    placeholder: 'Tell customers about your brand...',
+    colSpan: 2
+  },
+  {
+    name: 'logoUrl',
+    type: 'text',
+    label: 'Logo URL',
+    placeholder: 'https://...',
+    colSpan: 1
+  },
+  {
+    name: 'bannerUrl',
+    type: 'text',
+    label: 'Banner URL',
+    placeholder: 'https://...',
+    colSpan: 1
+  },
+  {
+    name: 'currency',
+    type: 'text',
+    label: 'Currency Code',
+    placeholder: 'INR, USD, etc.',
+    defaultValue: 'INR',
     colSpan: 1
   },
   {
@@ -74,10 +108,10 @@ export const storeFormConfig = createFormConfig([
     type: 'checkbox',
     placeholder: 'Enable Wishlist Feature',
     defaultValue: true,
-    colSpan: 2
+    colSpan: 1
   }
 ], {
   columns: 2,
-  submitLabel: 'Provision Storefront',
-  resetLabel: 'Cancel Provisioning'
+  submitLabel: 'Save Store Settings',
+  resetLabel: 'Cancel Changes'
 });
