@@ -75,9 +75,10 @@ export const AdminLogin: React.FC = () => {
         <div style={{ marginTop: '2rem', padding: '1rem', background: '#f8f9fa', borderRadius: '6px', fontSize: '0.8rem', color: '#666' }}>
           <strong>Demo Login Hints:</strong>
           <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
-            <li><code>admin@platform.com</code> / <code>1234</code> - Sees ALL</li>
-            <li><code>fashion@merchant.com</code> / <code>1234</code> - Sees ONLY fashion</li>
-            <li><code>tech@merchant.com</code> / <code>1234</code> - Sees ONLY tech</li>
+            <li><code>superuser@mtse.com</code> / <code>1234</code> - Super admin (audits all stores)</li>
+            <li><code>ammajan@store.com</code> / <code>1234</code> - Store owner (customizes storefront)</li>
+            <li><code>admin@platform.com</code> / <code>1234</code> - Super admin (legacy)</li>
+            <li><code>fashion@merchant.com</code> / <code>1234</code> - Store owner (fashion)</li>
           </ul>
         </div>
       </div>

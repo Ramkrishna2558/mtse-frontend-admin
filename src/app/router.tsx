@@ -7,6 +7,7 @@ import { AdminLayout } from '../components/layout/AdminLayout';
 import { ProductManager } from '../features/product-manager/ProductManager';
 import { OrderManager } from '../features/order-manager/OrderManager';
 import { Dashboard } from '../features/dashboard/Dashboard';
+import { StoreCustomizer } from '../features/store-customizer/StoreCustomizer';
 
 export function AppRouter() {
   return (
@@ -31,6 +32,9 @@ export function AppRouter() {
 
         {/* Orders module */}
         <Route path="/orders" element={<OrderManager />} />
+
+        {/* Storefront customizer (storeowner-only; superadmin gets a read-only notice) */}
+        <Route path="/customize" element={<StoreCustomizer />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

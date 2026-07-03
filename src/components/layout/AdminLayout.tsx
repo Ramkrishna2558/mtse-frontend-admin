@@ -55,6 +55,13 @@ export const AdminLayout: React.FC = () => {
                 </Link>
               </li>
             )}
+            {!isPlatformAdmin && (
+              <li>
+                <Link to="/customize" style={{ display: 'block', padding: '12px 1.5rem', color: 'white', textDecoration: 'none', opacity: 0.8 }}>
+                  🎨 Customize Storefront
+                </Link>
+              </li>
+            )}
             <li>
               <Link to="/products" style={{ display: 'block', padding: '12px 1.5rem', color: 'white', textDecoration: 'none', opacity: 0.8 }}>
                 📦 Product Inventory
